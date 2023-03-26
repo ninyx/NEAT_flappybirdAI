@@ -9,7 +9,7 @@ import random
 
 #Creating window
 WIN_WIDTH = 500
-WIN_HEIGHT = 600
+WIN_HEIGHT = 800
 
 #Loading images
 BIRD_IMAGES = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bird1.png"))), pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bird2.png"))), pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bird3.png")))]
@@ -81,8 +81,35 @@ class FlappyBird:
         if self.tilt <= -80:
             self.img = self.IMAGES[1]
             self.img_count = self.ANIMATION_TIME*2
-         
+        
+        rotated_image = pygame.transform.rotate(self.img, self.tilt)
+        new_rectangle = rotated_image.get_rect(center = self.img.get_rect(topleft = (self.x, self.y)).center)
+        window.blit(rotated_image, new_rectangle.topleft)
+
+    def get_mask(self):
+        return pygame.mask.from_surface(self.img)
+        
+
+def draw_window(window, bird):
+    window.blit(BG_IMAGE, (0,0))
+    bird.draw(window)
+    pygame.display.update()
 
 
-while True:
-    FlappyBird.move()
+def main():
+    flappy = FlappyBird(200, 200)
+    window = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+    clock = pygame.time.Clock()
+
+    play = True
+    while play:
+        clock.tick(30)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                play = False
+        flappy.move()
+        draw_window(window, flappy)
+    pygame.quit()
+    quit()
+
+main()
