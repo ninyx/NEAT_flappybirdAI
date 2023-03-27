@@ -6,7 +6,7 @@ import neat
 import time
 import os
 import random
-
+pygame.font.init()
 #Creating window
 WIN_WIDTH = 500
 WIN_HEIGHT = 800
@@ -17,6 +17,7 @@ PIPE_IMAGE = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","pip
 BASE_IMAGE = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","base.png")))
 BG_IMAGE = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bg.png")))
 
+STAT_FONT = pygame.font.SysFont("ComicSans", 30)
 #Creating class for bird
 class FlappyBird:
     IMAGES = BIRD_IMAGES
@@ -88,18 +89,94 @@ class FlappyBird:
 
     def get_mask(self):
         return pygame.mask.from_surface(self.img)
-        
 
-def draw_window(window, bird):
+class Pipes:
+    SPACE = 200
+    VELOCITY = 5
+
+    def __init__(self, x):
+        self.x = x
+        self.height = 0
+
+        self.top = 0
+        self.bottom = 0
+        self.PIPE_TOP = pygame.transform.flip(PIPE_IMAGE, False, True)
+        self.PIPE_BOTTOM = PIPE_IMAGE
+
+        self.passed = False
+        self.set_height()
+
+    def set_height(self):
+        self.height = random.randrange(50,450)
+        self.top = self.height - self.PIPE_TOP.get_height()
+        self.bottom = self.height + self.SPACE
+
+    def move(self):
+        self.x -= self.VELOCITY
+
+    def draw(self, window):
+        window.blit(self.PIPE_TOP, (self.x, self.top))
+        window.blit(self.PIPE_BOTTOM, (self.x, self.bottom))
+
+    def collide(self, bird):
+        bird_mask = bird.get_mask() 
+        top_mask = pygame.mask.from_surface(self.PIPE_TOP)
+        bottom_mask = pygame.mask.from_surface(self.PIPE_BOTTOM)
+
+        top_offset = (self.x - bird.x, self.top - round(bird.y))
+        bottom_offset = (self.x - bird.x, self.bottom - round(bird.y))
+
+        b_point = bird_mask.overlap(bottom_mask,bottom_offset)
+        t_point = bird_mask.overlap(top_mask, top_offset)
+
+        if t_point or b_point:
+            return True
+
+        return False
+    
+class Base:
+    VELOCITY = 5
+    WIDTH = BASE_IMAGE.get_width()
+
+    def __init__(self, y):
+        self.y = y
+        self.x1 = 0
+        self.x2 = self.WIDTH
+
+    def move(self):
+        self.x1 -= self.VELOCITY
+        self.x2 -= self.VELOCITY
+
+        if self.x1 + self.WIDTH < 0:
+            self.x1 = self.x2 + self.WIDTH
+        
+        if self.x2 + self.WIDTH < 0:
+            self.x2 = self.x1 + self.WIDTH
+    
+    def draw(self, window):
+        window.blit(BASE_IMAGE, (self.x1, self.y))
+        window.blit(BASE_IMAGE, (self.x2, self.y))
+
+
+def draw_window(window, bird, pipes, base, score):
     window.blit(BG_IMAGE, (0,0))
+
+    for pipe in pipes:
+        pipe.draw(window)
+    
+    text = STAT_FONT.render("Score: " + str(score), 1,(255,255,255))
+    window.blit(text, (WIN_WIDTH - 10 - text.get_width(), 10))
+    base.draw(window)
     bird.draw(window)
     pygame.display.update()
 
-
 def main():
-    flappy = FlappyBird(200, 200)
+    flappy = FlappyBird(230, 350)
+    base = Base(730)
+    pipes = [Pipes(600)]
     window = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
     clock = pygame.time.Clock()
+    score = 0
 
     play = True
     while play:
@@ -107,9 +184,37 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 play = False
-        flappy.move()
-        draw_window(window, flappy)
+        #flappy.move()
+        base.move()
+
+        rem = []
+        add_pipe = False
+        for pipe in pipes:
+            if pipe.collide(flappy):
+                pass
+
+            if pipe.x + pipe.PIPE_TOP.get_width() < 0:
+                rem.append(pipe)
+            
+            if not pipe.passed and pipe.x < flappy.x:
+                pipe.passed = True
+                add_pipe = True
+
+            pipe.move()
+
+        if add_pipe:
+            score += 1
+            pipes.append(Pipes(600))
+
+        for pipe in rem:
+            pipes.remove(pipe)
+        
+        if flappy.y + flappy.img.get_height() >= 730:
+            pass
+
+        draw_window(window, flappy, pipes, base, score)
     pygame.quit()
     quit()
+
 
 main()
