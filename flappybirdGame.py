@@ -205,7 +205,7 @@ def main(genomes, config):
 
     play = True
     while play:
-        clock.tick(30)
+        clock.tick(50)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 play = False
