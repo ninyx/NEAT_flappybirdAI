@@ -160,16 +160,18 @@ class Base:
         window.blit(BASE_IMAGE, (self.x2, self.y))
 
 
-def draw_window(window, bird, pipes, base, score):
+def draw_window(window, birds, pipes, base, score):
     window.blit(BG_IMAGE, (0,0))
 
     for pipe in pipes:
         pipe.draw(window)
     
     text = STAT_FONT.render("Score: " + str(score), 1,(255,255,255))
+    
     window.blit(text, (WIN_WIDTH - 10 - text.get_width(), 10))
     base.draw(window)
-    bird.draw(window)
+    for flappy in birds:
+        flappy.draw(window)
     pygame.display.update()
 
 def main(genomes, config):
@@ -177,7 +179,7 @@ def main(genomes, config):
     ge = []
     birds = []
 
-    for g in genomes:
+    for _, g in genomes:
         net = neat.nn.FeedForwardNetwork.create(g, config)
         nets.append(net)
         birds.append(FlappyBird(230,350))
@@ -196,8 +198,27 @@ def main(genomes, config):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 play = False
-        #flappy.move()
-        base.move()
+                pygame.quit()
+                quit()
+
+        pipe_indiv = 0
+        if len(birds) > 0:
+            if len(pipes) > 1 and birds[0].x > pipes[0].x + pipes[0].PIPE_TOP.get_width():
+                pipe_indiv = 1
+        else:
+            play = False
+            break
+        
+        for x, flappy in enumerate(birds):
+            flappy.move()
+            ge[x].fitness += 0.1
+
+            output = nets[x].activate((flappy.y, 
+                                       abs(flappy.y - pipes [pipe_indiv].height),
+                                       abs(flappy.y - pipes[pipe_indiv].bottom)))
+            if output[0] > 0.5:
+                flappy.jump()
+ 
 
         rem = []
         add_pipe = False
@@ -229,14 +250,14 @@ def main(genomes, config):
             pipes.remove(pipe)
         
         for x,flappy in enumerate(birds):
-            if flappy.y + flappy.img.get_height() >= 730:
+            if flappy.y + flappy.img.get_height() >= 730 or flappy.y < 0:
                 birds.pop(x)
                 nets.pop(x)
                 ge.pop(x)
+        
+        base.move()
 
-        draw_window(window, flappy, pipes, base, score)
-    pygame.quit()
-    quit()
+        draw_window(window, birds, pipes, base, score)
 
 
 def run(config_path):
