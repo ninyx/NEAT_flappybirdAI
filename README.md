@@ -1,7 +1,6 @@
-# https---github.com-ninyx-NEAT_flappybirdAI.git
-
+# Building and Cracking the Flappy Bird Game with NEAT
 For this repository,
 - Recreating Flappy Bird using Pygame
-- Training an AI to play using NEAT
+- Cracking the game using NEAT 
 
-This is based on a code along from TechwithTim.
+This is based on a code-along from TechwithTim.
